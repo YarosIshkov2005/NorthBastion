@@ -13,6 +13,8 @@ player.logger_mode(True)
 
 player.import_dependencies()
 
+player.show_error_message(True)
+
 player.check_path(path)
 player.music_loader()
 
