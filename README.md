@@ -7,6 +7,30 @@ A library for creating a simple music player with a Tkinter-based GUI for the fr
 ![Pygame](https://img.shields.io/badge/pygame-2.0%2B-green)
 ![License](https://img.shields.io/badge/license-MIT-yellow)
 
+# 🚀 New Features:
+• Added if not isinstance() checks in the logger_mode and show_error_message methods to validate input data types.
+
+• Added a track state monitoring loop using the if not mixer.music.get_busy() condition. When the current track finishes, the next_track function is called automatically to play the next track.
+
+# Working Principle Update:
+Added description of the transition_track functionality:
+
+- **Automatic Track Transition**:  
+  The player now includes an automatic track transition feature. When the current track finishes playing (i.e., reaches its end naturally), the next track in the playlist is automatically started. This is implemented using a background check of the mixer's state through mixer.music.get_busy(). If the mixer is not busy (indicating the track has ended), the next_track function is triggered.
+
+  Example:
+  - Current track: Track2.mp3 ends → Track3.mp3 starts automatically
+  - Works only when player is active (On state) and respects track cycling logic
+
+# Error Description Added:
+**For logger_mode method:**
+- `ValueError: Incorrect enabled value 'enabled'. Use boolean values: True or False` - occurs when non-boolean values are passed to the `enabled` parameter
+
+**For show_error_message method:**
+- ValueError: Incorrect enabled value 'enabled'. Use boolean values: True or False - occurs when non-boolean values are passed to the enabled parameter
+
+**Solutions:** Ensure only boolean values (True/False) are passed to these parameters. Example: player.logger_mode(True, ...) instead of player.logger_mode("True", ...)
+
 ## 📩 Installation:
 • Clone the repository:
   1. Clone the repository:
@@ -213,7 +237,7 @@ Note:
 
      » Create a variable player, through which we will call methods, as they are inside the PlayerGUI class.
 
-    • logger_mode(enabled, name, level, mode, enconding) - optional method responsible for logging library events.
+    • logger_mode(enabled, name, level, mode, encoding) - optional method responsible for logging library events.
 Takes one mandatory parameter enabled, a boolean True or False, i.e., enable/disable logger, and four optional: name - log file name with ".log" extension (e.g., "NorthBastion.log", set by default), level - logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL (DEBUG by default), mode - file write mode: "a" or "w" ("w" by default, to save memory), encoding - encoding, supported encodings: "utf-8", "latin-1" ("utf-8" by default). Parameters (except enabled) can be in any case, as the method uses: upper() and lower() to adjust case, i.e., case is converted appropriately for each (except enabled, name) parameter: "debug" -> "DEBUG", "W" -> "w", "UTF-8" -> "utf-8".
 
      Example: player.logger_mode(True, "logfile.log", "DEBUG", "a", "utf-8")

@@ -12,10 +12,11 @@ class PlayerGUI:
         self.track_is_begun = False
         self.dependencies_ok = False
         self.logger = None
+        self.after_id = None
         
-        self.error_message = ""
-        self.relative_path = ""
-        self.absolute_path = ""
+        self.error_message = " "
+        self.relative_path = " "
+        self.absolute_path = " "
         
         self.track_index = 0
         self.volume_level_index = 5
@@ -59,37 +60,39 @@ class PlayerGUI:
         mode = mode.lower()
         encoding = encoding.lower()
         
-        if enabled:
-            if self.logger and self.logger.handlers:
-                for handler in self.logger.handlers[:]:
-                    self.logger.removeHandler(handler)
+        if not isinstance(enabled, bool):
+            raise ValueError(f"Incorrect enabled value '{enabled}'. Use boolean values: True or False")
+            
+        if self.logger and self.logger.handlers:
+            for handler in self.logger.handlers[:]:
+                self.logger.removeHandler(handler)
                     
-            if not name.startswith(".") and name.endswith(".log"):
-                if level in self.logger_levels:
-                    if mode in self.logger_modes:
-                        if encoding in self.logger_encodings:
-                            self.logger = logging.getLogger("northbastion_player")
-                            self.logger.setLevel(level)
+        if name.startswith(".") or not name.endswith(".log"):
+            raise NameError(f"Incorrect logfile name '{name}'. For example: 'logfile.log'")
+                
+        if not isinstance(level, str) or level not in self.logger_levels:
+            raise ValueError(f"Unknown level '{level}'. Use levels: 'DEBUG (10)', 'INFO (20)', 'WARNING (30)', 'ERROR (40)', 'CRITICAL (50)'")
+                
+        if not isinstance(mode, str) or mode not in self.logger_modes:
+            raise ValueError(f"Unsupported write mode '{mode}'. Use write modes: 'a' or 'w'")
+                
+        if not isinstance(encoding, str) or encoding not in self.logger_encodings:
+            raise ValueError(f"Unsupported encoding '{encoding}'. Use encodings: 'utf-8' or 'latin-1'")
+                
+        self.logger = logging.getLogger("northbastion_player")
+        self.logger.setLevel(level)
                     
-                            file_handler = logging.FileHandler(
-                                filename=name,
-                                mode=mode,
-                                encoding=encoding
-                            )
-                            file_handler.setLevel(level)
+        file_handler = logging.FileHandler(
+            filename=name,
+            mode=mode,
+            encoding=encoding
+        )
+        file_handler.setLevel(level)
                     
-                            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s - %(lineno)s \n")
-                            file_handler.setFormatter(formatter)
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s - %(lineno)s \n")
+        file_handler.setFormatter(formatter)
                     
-                            self.logger.addHandler(file_handler)
-                        else:
-                            raise ValueError(f"Unsupported encoding '{encoding}'. Use encodings: 'utf-8' or 'latin-1'")
-                    else:
-                        raise ValueError(f"Unsupported write mode '{mode}'. Use write modes: 'a' or 'w'")
-                else:
-                    raise ValueError(f"Unknown level '{level}'. Use levels: 'DEBUG (10)', 'INFO (20)', 'WARNING (30)', 'ERROR (40)', 'CRITICAL (50)'")
-            else:
-                raise NameError(f"Incorrect logfile name '{name}'. For example: 'logfile.log'")
+        self.logger.addHandler(file_handler)
         
     def import_dependencies(self):
         dependencies = CheckDependencies(self.logger)
@@ -101,8 +104,11 @@ class PlayerGUI:
             self.player = MusicPlayerCore(self.mixer, self.logger)
         
     def show_error_message(self, show=False):
-        if show and not self.dependencies_ok:
+        if isinstance(show, bool) and not self.dependencies_ok:
             showerror(title="Dependency error:", message=self.error_message)
+        else:
+            if not isinstance(show, bool):
+                raise ValueError(f"Incorrect show value '{show}'. Use boolean values: True or False")
             
     def check_path(self, path=None):
         try:
@@ -116,11 +122,11 @@ class PlayerGUI:
                 showerror(title="Folder exists error:", message=f"Folder named {self.relative_path} not found")
                 if self.logger:
                     self.logger.error(f"Folder named {self.relative_path} does not exists")
-                self.absolute_path = ""
+                self.absolute_path = " "
         except Exception as e:
             if self.logger:
                 self.logger.error(f"NorthBastionError 2: {e}")
-            self.absolute_path = ""
+            self.absolute_path = " "
             
     def music_loader(self, path=None):
         audio_formats = (".wav", ".mp3", ".ogg")
@@ -195,7 +201,7 @@ class PlayerGUI:
         self.player_is_running = not self.player_is_running
         state = "On" if self.player_is_running else "Off"
         
-        if not self.player_is_running:
+        if self.player_is_running:
             self.enable_ui()
         else:
             self.disable_ui()
@@ -222,6 +228,7 @@ class PlayerGUI:
                 self.track_is_begun = True
                 self.track_is_running = True
                 self.player_buttons[0][1].config(text="Pause")
+                self.transition_track()
                 return
                 
             if self.logger:
@@ -230,9 +237,12 @@ class PlayerGUI:
             if self.track_is_running:
                 self.player_buttons[0][1].config(text="Play")
                 self.player.pause_track()
+                self.after_id = True
+                self.master.after_cancel(self.after_id)
             else:
                 self.player_buttons[0][1].config(text="Pause")
                 self.player.unpause_track()
+                self.transition_track()
             
             state = "Pause" if not self.track_is_running else "Play"    
             if self.logger:
@@ -307,6 +317,14 @@ class PlayerGUI:
         except Exception as e:
             if self.logger:
                 self.logger.error(f"NorthBastionError 5: {e}")
+                
+    def transition_track(self):
+        if not mixer.music.get_busy():
+            self.next_track()
+            track = self.track_list[self.track_index]
+            if self.logger:
+                self.logger.debug(f"Track updated {track} : {track_index}")
+        self.after_id = self.master.after(1000, self.transition_track)
             
     def enable_ui(self):
         for row in self.player_buttons:
@@ -322,6 +340,8 @@ class PlayerGUI:
         self.player_buttons[1][1].config(text="On", state="normal")
         
     def close_window(self):
+        self.after_id = True
+        self.master.after_cancel(self.after_id)
         self.master.destroy()
         
 class CheckDependencies:
@@ -329,7 +349,7 @@ class CheckDependencies:
         self.mixer = None
         self.logger = logger
         self.dependencies_ok = False
-        self.error_message = ""
+        self.error_message = " "
         
         self.check_dependencies()
                 
@@ -364,7 +384,7 @@ class MusicPlayerCore:
     def __init__(self, mixer, logger):
         self.mixer = mixer
         self.logger = logger
-        self.track = ""
+        self.track = " "
         
     def set_track(self, path, track):
         self.track = os.path.join(path, track)
