@@ -2,8 +2,10 @@ import tkinter as tk
 from tkinter.messagebox import showerror
 import logging
 import os
+import pygame.mixer as mixer
 
 class PlayerGUI:
+    mixer.init()
     def __init__(self, master):
         self.master = master
         
@@ -14,9 +16,9 @@ class PlayerGUI:
         self.logger = None
         self.after_id = None
         
-        self.error_message = " "
-        self.relative_path = " "
-        self.absolute_path = " "
+        self.error_message = ""
+        self.relative_path = ""
+        self.absolute_path = ""
         
         self.track_index = 0
         self.volume_level_index = 5
@@ -122,11 +124,11 @@ class PlayerGUI:
                 showerror(title="Folder exists error:", message=f"Folder named {self.relative_path} not found")
                 if self.logger:
                     self.logger.error(f"Folder named {self.relative_path} does not exists")
-                self.absolute_path = " "
+                self.absolute_path = ""
         except Exception as e:
             if self.logger:
                 self.logger.error(f"NorthBastionError 2: {e}")
-            self.absolute_path = " "
+            self.absolute_path = ""
             
     def music_loader(self, path=None):
         audio_formats = (".wav", ".mp3", ".ogg")
@@ -134,10 +136,12 @@ class PlayerGUI:
             if self.absolute_path:
                 file_path = self.absolute_path
             else:
-                file_path = os.path.absolute(path)
+                file_path = os.path.abspath(path)
             
             if self.track_list:
                 self.track_list.clear()
+            
+            self.absolute_path = file_path
                     
             with os.scandir(file_path) as entries:
                 for entry in entries:
@@ -323,7 +327,7 @@ class PlayerGUI:
             self.next_track()
             track = self.track_list[self.track_index]
             if self.logger:
-                self.logger.debug(f"Track updated {track} : {track_index}")
+                self.logger.debug(f"Track updated {track} : {self.track_index}")
         self.after_id = self.master.after(1000, self.transition_track)
             
     def enable_ui(self):
@@ -349,7 +353,7 @@ class CheckDependencies:
         self.mixer = None
         self.logger = logger
         self.dependencies_ok = False
-        self.error_message = " "
+        self.error_message = ""
         
         self.check_dependencies()
                 
@@ -384,7 +388,7 @@ class MusicPlayerCore:
     def __init__(self, mixer, logger):
         self.mixer = mixer
         self.logger = logger
-        self.track = " "
+        self.track = ""
         
     def set_track(self, path, track):
         self.track = os.path.join(path, track)
