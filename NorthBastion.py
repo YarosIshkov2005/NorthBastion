@@ -2,10 +2,8 @@ import tkinter as tk
 from tkinter.messagebox import showerror
 import logging
 import os
-import pygame.mixer as mixer
 
 class PlayerGUI:
-    mixer.init()
     def __init__(self, master):
         self.master = master
         
