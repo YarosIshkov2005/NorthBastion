@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter.messagebox import showerror
+from pathlib import Path
 import logging
-import os
 
 class PlayerGUI:
     def __init__(self, master):
@@ -113,8 +113,8 @@ class PlayerGUI:
     def check_path(self, path=None):
         try:
             self.relative_path = path
-            absolute_path = os.path.abspath(path)
-            if os.path.isdir(absolute_path):
+            absolute_path = Path(path).resolve()
+            if Path(absolute_path).is_dir():
                 if self.logger:
                     self.logger.info(f"Folder named {self.relative_path} found!")
                 self.absolute_path = absolute_path
@@ -134,18 +134,17 @@ class PlayerGUI:
             if self.absolute_path:
                 file_path = self.absolute_path
             else:
-                file_path = os.path.abspath(path)
+                file_path = Path(path).resolve()
             
             if self.track_list:
                 self.track_list.clear()
             
             self.absolute_path = file_path
                     
-            with os.scandir(file_path) as entries:
-                for entry in entries:
-                    if entry.is_file():
-                        if not entry.name.startswith(".") and entry.name.endswith(audio_formats):
-                            self.track_list.append(entry.name)
+            for entry in Path.iterdir(file_path):
+                if entry.is_file():
+                    if not entry.name.startswith(".") and entry.name.endswith(audio_formats):
+                        self.track_list.append(entry.name)
             
             if self.track_list:                
                 self.track_list.sort()
@@ -389,12 +388,12 @@ class MusicPlayerCore:
         self.track = ""
         
     def set_track(self, path, track):
-        self.track = os.path.join(path, track)
+        self.track = Path(path) / track
         self.play_track()
         
     def play_track(self):
         try:
-            if os.path.exists(self.track):
+            if Path(self.track).exists():
                 self.mixer.music.load(self.track)
                 self.mixer.music.play()
                 if self.logger:
