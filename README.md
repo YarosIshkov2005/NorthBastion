@@ -7,6 +7,8 @@ A library for creating a simple music player with a Tkinter-based GUI for the fr
 ![Pygame](https://img.shields.io/badge/pygame-2.0%2B-green)
 ![License](https://img.shields.io/badge/license-MIT-yellow)
 
+# 🛠️ Bugfix v1.0.3
+
 # 🚀 New Features:
 • Added if not isinstance() checks in the logger_mode and show_error_message methods to validate input data types.
 
