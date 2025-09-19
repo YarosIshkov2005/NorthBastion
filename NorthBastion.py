@@ -141,7 +141,7 @@ class PlayerGUI:
             
             self.absolute_path = file_path
                     
-            for entry in Path.iterdir(file_path):
+            for entry in Path(file_path).iterdir():
                 if entry.is_file():
                     if not entry.name.startswith(".") and entry.name.endswith(audio_formats):
                         self.track_list.append(entry.name)
